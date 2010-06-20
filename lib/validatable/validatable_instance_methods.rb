@@ -4,6 +4,11 @@ module Validatable
     klass.extend Validatable::Macros
   end
   
+  # simple implementation to work active model
+  def read_attribute_for_validation(attr)
+   send(attr)
+  end
+  
   # call-seq: valid?
   #
   # Returns true if no errors were added otherwise false. Only executes validations that have no :groups option specified
@@ -15,7 +20,7 @@ module Validatable
   #
   # Returns the Errors object that holds all information about attribute error messages.
   def errors
-    @errors ||= Validatable::Errors.new
+    @errors ||= Validatable::Errors.new(self)
   end
   
   def valid_for_group?(group) #:nodoc:

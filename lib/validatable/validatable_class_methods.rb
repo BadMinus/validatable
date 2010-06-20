@@ -1,6 +1,11 @@
 module Validatable
   module ClassMethods #:nodoc:
     
+    # For humanizing attributes in label tag in example 
+    def human_attribute_name(attr, options = {})
+       attr.to_s.humanize
+    end
+    
     def validate_children(instance, group)
       self.children_to_validate.each do |child_validation|
         next unless child_validation.should_validate?(instance)

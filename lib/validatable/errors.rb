@@ -1,9 +1,20 @@
+# locale for symbol default errors like :invalid to "is invalid"
+I18n.load_path << File.join(
+  File.dirname(__FILE__), "locale", "en.yml"
+)
+
 module Validatable
   class Errors
     extend Forwardable
     include Enumerable
-
+    extend ActiveSupport::Concern
+    
     def_delegators :errors, :clear, :each, :each_pair, :empty?, :length, :size
+
+    # Added to know model
+    def initialize(base)
+      @base = base
+    end
 
     # Returns true if the specified +attribute+ has errors associated with it.
     #
@@ -101,6 +112,36 @@ module Validatable
 
     def humanize(lower_case_and_underscored_word) #:nodoc:
       lower_case_and_underscored_word.to_s.gsub(/_id$/, "").gsub(/_/, " ").capitalize
+    end
+    
+    # From rails3
+    def generate_message(attribute, message = :invalid, options = {})
+      message, options[:default] = options[:default], message if options[:default].is_a?(Symbol)
+
+      defaults = @base.class.ancestors.select{ |x| x.respond_to?(:model_name) }.map do |klass|
+        [ :"#{@base.class}.errors.models.#{klass.model_name.underscore}.attributes.#{attribute}.#{message}",
+          :"#{@base.class}.errors.models.#{klass.model_name.underscore}.#{message}" ]
+      end
+
+      defaults << options.delete(:default)
+      defaults << :"#{@base.class}.errors.messages.#{message}"
+      defaults << :"errors.attributes.#{attribute}.#{message}"
+      defaults << :"errors.messages.#{message}"
+
+      defaults.compact!
+      defaults.flatten!
+
+      key = defaults.shift
+      value = @base.send(:read_attribute_for_validation, attribute)
+
+      options = {
+        :default => defaults,
+        :model => @base.class.model_name.human,
+        :attribute => @base.class.human_attribute_name(attribute),
+        :value => value
+      }.merge(options)
+
+      I18n.translate(key, options)
     end
   end
 end
