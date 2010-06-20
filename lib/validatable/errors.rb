@@ -6,8 +6,9 @@ I18n.load_path << File.join(
 module Validatable
   class Errors
     extend Forwardable
-    include Enumerable
     extend ActiveSupport::Concern
+    include Enumerable
+    
     
     def_delegators :errors, :clear, :each, :each_pair, :empty?, :length, :size
 
@@ -58,7 +59,15 @@ module Validatable
       errors[attribute.to_sym] || []
     end
 
-    def add(attribute, message) #:nodoc:
+    #def add(attribute, message) #:nodoc:
+    #  errors[attribute.to_sym] = [] if errors[attribute.to_sym].nil?
+    #  errors[attribute.to_sym] << message
+    #end
+    
+    def add(attribute, message = nil, options = {})
+      message ||= :invalid
+      message = generate_message(attribute, message, options) if message.is_a?(Symbol)
+      message = message.call if message.is_a?(Proc)
       errors[attribute.to_sym] = [] if errors[attribute.to_sym].nil?
       errors[attribute.to_sym] << message
     end
